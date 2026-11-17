@@ -1,0 +1,40 @@
+{
+ "scales": [
+  4,
+  8,
+  16
+ ],
+ "hash": "FNV-1a-64 over Float64 K*diag^2",
+ "meshes": {
+  "icosphere-s4": {
+   "hash": "5632782122d54755",
+   "certified": 2562,
+   "vertices": 2562,
+   "medianKn": 12.01372747232087
+  },
+  "torus-64x32": {
+   "hash": "414afe8d07ff14e5",
+   "certified": 2048,
+   "vertices": 2048,
+   "medianKn": 0
+  },
+  "tube-nu64": {
+   "hash": "45df7cee099e5812",
+   "certified": 0,
+   "vertices": 1600,
+   "medianKn": 0
+  },
+  "saddle-41x41": {
+   "hash": "926d9e05ae141053",
+   "certified": 1395,
+   "vertices": 1681,
+   "medianKn": -2.725652285480563
+  },
+  "noisy-sphere-2pct": {
+   "hash": "acf501a0b092a593",
+   "certified": 1809,
+   "vertices": 2562,
+   "medianKn": -35.52279988256444
+  }
+ }
+}

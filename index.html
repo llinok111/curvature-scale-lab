@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>curvature-scale-lab — scale-space curvature certificates</title>
+  <style>
+    body { margin: 0; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0e1116; color: #d7dde5; }
+    #app { display: flex; height: 100vh; }
+    #view { flex: 1 1 auto; }
+    #panel { width: 340px; padding: 14px; overflow-y: auto; background: #151a21; border-left: 1px solid #232a33; }
+    h1 { font-size: 15px; margin: 0 0 8px; }
+    select, button { background: #1e242d; color: #d7dde5; border: 1px solid #333c48; padding: 4px 8px; font: inherit; }
+    .row { margin: 8px 0; display: flex; gap: 8px; align-items: center; }
+    .k { color: #8fa3b8; }
+    .v { color: #e8eef5; }
+    .ok { color: #5ad07a; } .warn { color: #e8c35a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    td { padding: 2px 4px; border-bottom: 1px solid #232a33; }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<div id="app">
+  <div id="view"></div>
+  <div id="panel">
+    <h1>curvature-scale-lab</h1>
+    <div>K is reported scale-normalised: K·diag². The certificate keeps a sign only when it survives diffusion scales 4/8/16.</div>
+    <div class="row"><span class="k">mesh</span><select id="mesh"></select></div>
+    <div class="row"><button id="toggle">show unstable vertices</button></div>
+    <table>
+      <tr><td class="k">vertices</td><td class="v" id="verts">-</td></tr>
+      <tr><td class="k">certified</td><td class="v" id="certified">-</td></tr>
+      <tr><td class="k">median K·diag²</td><td class="v" id="mediankn">-</td></tr>
+      <tr><td class="k">browser hash</td><td class="v" id="bhash">-</td></tr>
+      <tr><td class="k">node hash</td><td class="v" id="nhash">-</td></tr>
+      <tr><td class="k">hash match</td><td class="v" id="match">-</td></tr>
+    </table>
+    <div id="note" style="margin-top:10px;color:#8fa3b8"></div>
+  </div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+# curvature-scale-lab
+
+**Promise (baseline in `baseline/single-scale.mjs`):** on a unit icosphere with 2% seeded radial noise, classifying Gaussian curvature sign at the original resolution flips **1,438 / 2,562** vertices; the 4/8/16-scale certificate classifies **1,809 / 2,562** vertices with **0 wrong signs** (precision 100% on the certified set). On the analytic primitives the same core reaches median relative error **1.14e-3** (sphere K·diag², baseline uniform-area 7.62e-4), **2.80e-3** (torus, clear-sign band) and **1920/1920** correct signs off the torus' K=0 band; 12-decade scaling (1e-6 … 1e6) changes the normalised value by **2.95e-16** relative.
+
+Upstream: none
+
+## What this is
+
+A scale-space curvature workbench for triangle meshes. `src/core.mjs` computes discrete Gaussian curvature (angle defect / mixed Voronoi area) and cotangent mean curvature, normalises by the bounding-box diagonal so every number is dimensionless, then diffuses the curvature field over the mesh graph at scales 4/8/16 and keeps a sign only when all three scales agree. Nodes in the ledger so far cover meshes, flow topology, transparency, CSG and articulated chains; none of them certifies *which curvature features survive smoothing*, which is what this repo adds.
+
+## Run it
+
+```bash
+node tools/gen-sample.mjs   # rebuilds data/meshes.json + data/reference.json (deterministic, seed 20261117)
+node bench/verify.mjs       # 14 assertions, prints every measured value
+node bench/bench.mjs        # cold start + 7 samples -> bench/result.json
+python3 -m http.server 4173 # then open http://localhost:4173 (three.js 0.169.0 via CDN importmap)
+```
+
+No `npm install`, no bundler, no `node_modules`. `src/core.mjs` imports nothing but Math and runs in Node directly:
+
+```bash
+node -e "import('./src/core.mjs').then(m => console.log(typeof m.analyze))"
+```
+
+## Evidence (`bench/result.json`, 10,242-vertex icosphere / 20,480 triangles)
+
+| operation | cold (ms) | median (ms) | p95 (ms) | rel. SD |
+|---|---|---|---|---|
+| Gaussian curvature only (mixed area) | 188.44 | 75.23 | 136.95 | 30.5% |
+| single-scale sign classification (baseline) | 69.95 | 71.22 | 79.30 | 5.0% |
+| 4/8/16 scale-space certificate | 137.50 | 89.52 | 107.09 | 9.2% |
+| uniform-area baseline (`baseline/single-scale.mjs`) | 72.63 | 73.34 | 87.06 | 9.3% |
+
+The certificate costs **1.257×** the single-scale pass on the same mesh (`ratio_certificate_over_single` in `result.json`). `gaussian_curvature_only` shows a 30.5% relative SD and a 188 ms cold start because the first calls run while V8 still tiers up the loop and the GC touches the freshly built topology; its median (75.23 ms) sits next to the other passes, so the spread is JIT/GC noise, not a measurement of algorithmic variance. The `hash` fields cover the curvature field `K·diag²`; `single_scale_analysis` and `scale_space_certificate` print the same hash because the certificate adds the stability mask on top of the same field.
+
+## 本轮创新
+
+First package that treats curvature as a **certificate with an abstention rule** instead of a per-vertex scalar: node and the page share `src/core.mjs`, the page recomputes the field and compares its FNV-1a-64 hash against the node hash baked into `data/reference.json` at generation time, and a vertex is only classified when scales 4/8/16 agree — otherwise it is reported unstable. Scale normalisation (K·diag²) makes the verdict invariant across 12 decades of mesh size, and the noise result above is the concrete thing the single-scale baseline cannot do: it flips 56% of the vertices on a 2% noisy sphere, the certificate flips none of the ones it certifies.
+
+## Known limitations (measured, not guessed)
+
+- **Absolute dead-band.** The sign threshold is `relThreshold = 1e-3` on `K·diag²` — an absolute number in normalised units. It is scale-invariant by construction (verified 1e-6 … 1e6), but it is not adaptive: features with |K·diag²| < 1e-3 are reported unstable.
+- **Saddle sign disagreement.** On the hyperbolic paraboloid `saddle-41x41` (a = 0.4), mixed-area angle-defect curvature agrees with the analytic negative sign on only **931/1521** interior, unambiguous vertices; 590 disagree. This is a real limit of angle-defect Gaussian curvature on this coarse regular grid, not a rendering artefact; the primitive is kept in the corpus and printed by `bench/verify.mjs` rather than hidden.
+- **Boundary vertices.** Angle defect at a boundary vertex measures geodesic curvature, so open meshes (`tube`, `saddle`) exclude boundary vertices from the sign claims.
+- **Diffusion, not geodesic balls.** The scale axis is mesh-graph diffusion with λ = 0.5, an approximation of scale space; it is not a true geodesic-ball integral, and the 4/8/16 steps are discrete.
+- **Corpus is analytic primitives.** The five meshes are generated in `src/shapes.mjs` (sphere, torus, open tube, hyperbolic paraboloid, noisy sphere); no scanned or glTF asset is included. `data/meshes.json` is regenerated by script, never committed by hand.
+- **No browser screenshot.** Headless browsers are unavailable in this environment; the page evidence is HTTP 200 + importmap + the runtime node/browser hash comparison described above, not a screenshot.
+- **Mean curvature baseline.** `meanCurvatureUniform` is a calibrated umbrella estimate, reported for context; the asserted mean-curvature result is the cotangent one (tube median relative error 7.56e-15).
+
+## Files
+
+`src/core.mjs` (pure, no three/DOM/I-O) · `src/shapes.mjs` (analytic generators + ground truth) · `baseline/single-scale.mjs` (the baseline) · `tools/gen-sample.mjs` · `bench/verify.mjs` · `bench/bench.mjs` · `bench/result.json` · `index.html` + `main.js` (three.js 0.169.0 via pinned CDN importmap) · `data/meshes.json`, `data/reference.json` (script-generated).
+
+MIT — see `LICENSE`.
